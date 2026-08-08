@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Baccarat</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#170404;font-family:"Pretendard Variable","Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif;color:#fff}
+body{touch-action:manipulation}
+button{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;font:inherit;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.chip,.bet,.sidebet,.action{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:
+ radial-gradient(ellipse at 50% 13%,#d43b2c 0,#7c100e 18%,#3b0504 42%,#180302 67%,#0a0101 100%)}
+#app:before{content:"";position:absolute;inset:0;background:
+ linear-gradient(180deg,rgba(255,145,90,.14),transparent 23%,rgba(0,0,0,.3) 60%,rgba(0,0,0,.78) 100%);pointer-events:none}
+.game{position:absolute;left:0;right:0;top:0;bottom:0;padding:7px 9px 10px;display:flex;flex-direction:column}
+.deck-top{height:100px;position:relative;overflow:hidden;flex:0 0 100px}
+.top-left,.top-right{position:absolute;display:flex;gap:2px;top:-35px}
+.top-left{left:25px}.top-right{right:24px}
+.tcard{width:58px;height:86px;background:#fff;color:#111;border-radius:3px;box-shadow:0 3px 8px #000b;padding:3px 4px;font-size:23px;font-weight:900;display:flex;flex-direction:column;justify-content:space-between}
+.tcard.red{color:#b60000}.tcard .s{font-size:28px;text-align:center}.tcard .b{transform:rotate(180deg)}
+.result{height:105px;flex:0 0 105px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.result:before,.result:after{content:"";position:absolute;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#ffd56a,transparent 62%);filter:blur(3px);opacity:.55}
+.result:before{left:20%;top:5px}.result:after{right:20%;top:5px}
+.ribbon{display:none;width:310px;height:40px;line-height:40px;text-align:center;font-size:19px;font-weight:900;background:linear-gradient(90deg,transparent,#165fc4 10%,#2c7ee8 50%,#165fc4 90%,transparent);text-shadow:0 2px 3px #001;position:relative;z-index:1}.result.player-win .ribbon{display:block;background:linear-gradient(90deg,transparent,#165fc4 10%,#2c7ee8 50%,#165fc4 90%,transparent)}.result.banker-win .ribbon{display:block;background:linear-gradient(90deg,transparent,#a91418 10%,#d52d32 50%,#a91418 90%,transparent)}
+.result-word{font-size:20px;font-weight:800;margin-top:4px;z-index:1}.result-money{font-size:26px;font-weight:900;z-index:1}
+.table{flex:0 0 auto;position:relative}
+.board{height:284px;display:grid;grid-template-columns:1fr 1.03fr 1fr;gap:5px}
+.zone{position:relative;border-radius:7px;border:3px solid;overflow:hidden;box-shadow:inset 0 0 20px #000a,0 3px 7px #000a}
+.player{border-color:#176eff;background:linear-gradient(180deg,rgba(31,94,190,.86),rgba(7,32,90,.9))}
+.banker{border-color:#b71d1d;background:linear-gradient(180deg,rgba(119,18,18,.9),rgba(47,3,3,.94))}
+.tie{border:0;border-radius:62px 62px 7px 7px;background:linear-gradient(180deg,#287c22,#0c3c0b 72%,#082607);box-shadow:inset 0 0 25px #000a,0 3px 7px #000a}
+.zone-inner{height:100%;padding:8px 5px;display:flex;flex-direction:column;align-items:center}
+.title{font-size:21px;font-weight:900;text-shadow:0 2px 2px #000;margin-bottom:0}
+.pool{font-size:17px;font-weight:900;color:#d9e8ff;line-height:20px}
+.banker .pool{color:#ff625f}
+.users{font-size:12px;font-weight:700;line-height:15px}
+.big-score{font-size:29px;font-weight:900;line-height:31px;margin-top:0}
+.cards{display:flex;gap:3px;justify-content:center;margin-top:5px;height:82px}
+.card{width:54px;height:78px;border-radius:4px;background:#fff;color:#111;box-shadow:0 3px 6px #000b;padding:3px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;font-size:18px;font-weight:900}
+.card.red{color:#b40000}.card .s{font-size:26px;text-align:center;line-height:1}.card .b{transform:rotate(180deg)}
+.table-chip{margin-top:auto;width:48px;height:48px;border-radius:50%;border:4px solid #ddd;background:#171717;box-shadow:0 0 0 3px #252525,0 3px 7px #000;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900}
+.tie .zone-inner{padding-top:14px}.tie .big-score{margin-top:0}.tie .cards{display:none}.tie-bottom{margin-top:auto;text-align:center}.tie-label{font-size:21px;font-weight:900}.tie-rate{font-size:18px;font-weight:900;margin-bottom:17px}
+.bets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px}
+.bet{height:70px;border-radius:5px;border:2px solid #5a5a5a;background:linear-gradient(180deg,#4a4a4a,#242424 55%,#171717);box-shadow:inset 0 1px #ffffff20,0 3px 6px #000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ddd;font-weight:900;cursor:pointer;touch-action:manipulation}
+.bet:active,.bet.on{border-color:#f0cb55;box-shadow:inset 0 0 14px #e5b62b66,0 2px 4px #000}
+.bet .name{font-size:14px}.bet .rate{font-size:11px;color:#aaa;margin-top:2px}.bet .amount{font-size:12px;color:#e5c65d;margin-top:3px}
+.controls{margin-top:7px;border-radius:8px;padding:7px;background:linear-gradient(180deg,#3a3a3a,#171717);border:1px solid #555;box-shadow:0 4px 10px #000b}
+.balance{text-align:center;font-size:17px;font-weight:900;color:#f0cd64;margin-bottom:7px}
+.chips{display:flex;justify-content:center;gap:7px;margin-bottom:7px;flex-wrap:nowrap}
+.chip{width:48px;height:48px;border-radius:50%;border:3px solid #b9b9b9;color:#eee;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px #151515,inset 0 0 12px #000,0 3px 8px #000;cursor:pointer;position:relative;letter-spacing:-.3px;text-shadow:0 1px 2px #000}
+.chip:before{content:"";position:absolute;inset:2px;border-radius:50%;padding:0;background:conic-gradient(from -90deg,rgba(255,255,255,.95) 0deg 30deg,transparent 30deg 72deg,rgba(255,255,255,.95) 72deg 102deg,transparent 102deg 144deg,rgba(255,255,255,.95) 144deg 174deg,transparent 174deg 216deg,rgba(255,255,255,.95) 216deg 246deg,transparent 246deg 288deg,rgba(255,255,255,.95) 288deg 318deg,transparent 318deg 360deg);-webkit-mask:radial-gradient(circle,transparent 0 68%,#000 69% 100%);mask:radial-gradient(circle,transparent 0 68%,#000 69% 100%);pointer-events:none} .chip.b{background:radial-gradient(circle at 35% 30%,#5c3b72,#29143d 52%,#12091b);border-color:#b987d8} .chip.b:before{background:conic-gradient(from -90deg,#79d7ff 0deg 30deg,transparent 30deg 72deg,#79d7ff 72deg 102deg,transparent 102deg 144deg,#79d7ff 144deg 174deg,transparent 174deg 216deg,#79d7ff 216deg 246deg,transparent 246deg 288deg,#79d7ff 288deg 318deg,transparent 318deg 360deg);-webkit-mask:radial-gradient(circle,transparent 0 68%,#000 69% 100%);mask:radial-gradient(circle,transparent 0 68%,#000 69% 100%)}
+.chip.s{background:radial-gradient(circle at 35% 30%,#35465f,#121b2b 52%,#080d15)}
+.chip.g{background:radial-gradient(circle at 35% 30%,#365b50,#102c25 52%,#071512)}
+.chip.r{background:radial-gradient(circle at 35% 30%,#693c3c,#3a1114 52%,#180608)}
+.chip.p{background:radial-gradient(circle at 35% 30%,#574866,#24182f 52%,#100916)}
+.chip.b{background:radial-gradient(circle at 35% 30%,#6b3f83,#32143f 52%,#16091d);border-color:#b987d8}
+.chip.selected{transform:scale(1.12);border-color:#e4c75e;box-shadow:inset 0 0 0 2px #151515,inset 0 0 14px #000,0 0 15px #d8b948,0 3px 8px #000}
+.actions{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:5px}
+.action{height:46px;border-radius:5px;border:1px solid #777;background:linear-gradient(#4b4b4b,#242424);color:#fff;font-size:13px;font-weight:900;cursor:pointer}
+.action.deal{background:linear-gradient(#e9c960,#9c7218);color:#1b1000;border-color:#f4dd83;font-size:17px}
+.message{text-align:center;height:20px;line-height:20px;color:#ddd;font-size:11px}
+.road{margin-top:5px;background:#101010;border:1px solid #444;border-radius:4px;padding:4px}
+.road-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:2px}
+.dot{aspect-ratio:1;border-radius:50%;background:#282828;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900}.dot.P{background:#1458d3}.dot.B{background:#b51d1d}.dot.T{background:#087844}
+@media(min-width:600px){.game{max-width:720px;margin:auto}.board{height:310px}.zone{min-height:310px}}
+
+/* ===== CHIP REFERENCE DESIGN OVERRIDE ===== */
+/* The chips below intentionally follow the supplied reference: round casino chip,
+   segmented light edge blocks, recessed inner ring and simple center label.
+   Colors are slightly desaturated to sit naturally on the red/black table. */
+.chip{
+  width:56px;height:56px;flex:0 0 56px;border:0;border-radius:50%;
+  position:relative;overflow:hidden;padding:0;
+  color:#f5f5f5;font-size:10px;font-weight:900;letter-spacing:-.2px;
+  text-shadow:0 1px 2px #000;
+  box-shadow:0 3px 8px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.22),inset 0 -4px 7px rgba(0,0,0,.3);
+  background-color:#8e3f3d;
+  background-image:
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.07) 0 34%,transparent 35%),
+    radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(255,255,255,.18) 59% 61%,transparent 62%),
+    conic-gradient(from 0deg,transparent 0 5deg,#e8e6df 5deg 14deg,transparent 14deg 40deg,#e8e6df 40deg 49deg,transparent 49deg 76deg,#e8e6df 76deg 85deg,transparent 85deg 112deg,#e8e6df 112deg 121deg,transparent 121deg 148deg,#e8e6df 148deg 157deg,transparent 157deg 184deg,#e8e6df 184deg 193deg,transparent 193deg 220deg,#e8e6df 220deg 229deg,transparent 229deg 256deg,#e8e6df 256deg 265deg,transparent 265deg 292deg,#e8e6df 292deg 301deg,transparent 301deg 328deg,#e8e6df 328deg 337deg,transparent 337deg),
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.2),transparent 28%);
+}
+.chip:before{
+  content:"";position:absolute;inset:8px;border-radius:50%;
+  border:2px solid rgba(235,235,230,.7);pointer-events:none;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.2),inset 0 0 0 6px rgba(255,255,255,.08);
+}
+.chip:after{
+  content:"";position:absolute;inset:15px;border-radius:50%;
+  border:1px dashed rgba(235,235,230,.72);pointer-events:none;
+  box-shadow:inset 0 0 8px rgba(0,0,0,.35);
+}
+.chip.s{background-color:#3f5579;background-image:
+  radial-gradient(circle at 50% 50%,rgba(255,255,255,.07) 0 34%,transparent 35%),
+  radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(255,255,255,.18) 59% 61%,transparent 62%),
+  conic-gradient(from 0deg,transparent 0 5deg,#e8e6df 5deg 14deg,transparent 14deg 40deg,#e8e6df 40deg 49deg,transparent 49deg 76deg,#e8e6df 76deg 85deg,transparent 85deg 112deg,#e8e6df 112deg 121deg,transparent 121deg 148deg,#e8e6df 148deg 157deg,transparent 157deg 184deg,#e8e6df 184deg 193deg,transparent 193deg 220deg,#e8e6df 220deg 229deg,transparent 229deg 256deg,#e8e6df 256deg 265deg,transparent 265deg 292deg,#e8e6df 292deg 301deg,transparent 301deg 328deg,#e8e6df 328deg 337deg,transparent 337deg),
+  radial-gradient(circle at 35% 28%,rgba(255,255,255,.18),transparent 28%)}
+.chip.g{background-color:#3f765d}
+.chip.r{background-color:#934442}
+.chip.p{background-color:#4f4f54}
+.chip.b{background-color:#303236;border-color:transparent}
+/* Reference white chip: cool white body with muted blue edge blocks. */
+.chip-white,.chip[data-value="500000"]{color:#20252c;text-shadow:none;background-color:#c9ccd0;background-image:
+  radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 34%,transparent 35%),
+  radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(55,83,135,.22) 59% 61%,transparent 62%),
+  conic-gradient(from 0deg,transparent 0 5deg,#4969a2 5deg 14deg,transparent 14deg 40deg,#4969a2 40deg 49deg,transparent 49deg 76deg,#4969a2 76deg 85deg,transparent 85deg 112deg,#4969a2 112deg 121deg,transparent 121deg 148deg,#4969a2 148deg 157deg,transparent 157deg 184deg,#4969a2 184deg 193deg,transparent 193deg 220deg,#4969a2 220deg 229deg,transparent 229deg 256deg,#4969a2 256deg 265deg,transparent 265deg 292deg,#4969a2 292deg 301deg,transparent 301deg 328deg,#4969a2 328deg 337deg,transparent 337deg)}
+.chip-white:before,.chip[data-value="500000"]:before{border-color:rgba(53,79,128,.7)}
+.chip.selected{transform:scale(1.1);border-color:#e4c75e;box-shadow:0 0 14px rgba(216,185,72,.7),0 3px 8px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.25)}
+.chip:active{transform:scale(.96)}
+
+
+/* ===== ADDITIVE ENHANCEMENTS: original styles above are intentionally preserved ===== */
+#app{background:radial-gradient(ellipse at 50% 7%,#b92b23 0,#6d0d0b 26%,#2b0504 55%,#100101 82%,#050000 100%) !important}
+#app{-webkit-user-select:none;user-select:none}button{touch-action:manipulation;-webkit-touch-callout:none}.game{padding-top:calc(7px + env(safe-area-inset-top));padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+#app:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 27% 18%,rgba(255,218,126,.22) 0 1px,transparent 2px),radial-gradient(circle at 69% 19%,rgba(255,218,126,.2) 0 1px,transparent 2px),linear-gradient(180deg,transparent 0 38%,rgba(0,0,0,.18) 55%,rgba(0,0,0,.82) 100%);background-size:170px 150px,190px 160px,100% 100%;opacity:.9}
+.game{z-index:1}
+.enhance-stats{margin-top:5px;background:rgba(9,9,9,.78);border:1px solid #494949;border-radius:5px;padding:5px 6px;box-shadow:inset 0 1px rgba(255,255,255,.06)}
+.stat-line{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:4px;text-align:center;font-size:9px;font-weight:800;color:#d8d8d8}.stat-line span{padding:3px 2px;border-radius:3px;background:#171717}.stat-line b{display:block;font-size:11px;color:#f0cd64;margin-top:1px}
+.shoe-line{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#aaa;margin-bottom:4px}.shoe-line strong{color:#eee}.shoe-meter{height:4px;background:#252525;border-radius:4px;overflow:hidden}.shoe-fill{height:100%;width:100%;background:linear-gradient(90deg,#d7b445,#7a5712);transition:width .25s}
+.sidebets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:5px}.sidebet{height:56px;min-width:0;border-radius:5px;border:2px solid #5c5c5c;background:linear-gradient(180deg,#515151,#272727 58%,#191919);color:#ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;box-shadow:inset 0 1px rgba(255,255,255,.12),0 3px 6px #000;cursor:pointer;padding:2px 1px}.sidebet .name{font-size:10px;line-height:1.1;white-space:nowrap;letter-spacing:-.6px;text-align:center}.sidebet .rate{font-size:8px;color:#bcbcbc;margin-top:2px}.sidebet .amount{font-size:9px;color:#e4c45a;margin-top:2px}.sidebet.on{border-color:#e9c75e;box-shadow:inset 0 0 12px #d8ae3633,0 0 8px #caa63b44}
+.chips{overflow-x:auto;justify-content:flex-start;padding:2px 3px 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{flex:0 0 48px}
+#pCards .card,#bCards .card{transition:transform .28s ease,opacity .28s ease}.deal-in{animation:dealIn .32s ease both}.deal-in:nth-child(2){animation-delay:.14s}.deal-in:nth-child(3){animation-delay:.28s}
+@keyframes dealIn{from{opacity:0;transform:translateY(-28px) rotate(-4deg) scale(.88)}to{opacity:1;transform:none}}
+.flash-win{animation:flashWin .6s ease 2}@keyframes flashWin{50%{filter:brightness(1.8);transform:scale(1.025)}}
+.tap-scale{transition:transform .08s}.tap-scale:active{transform:scale(.97)}
+@media(max-width:420px){.title{font-size:19px}.pool{font-size:14px}.big-score{font-size:28px}.card{width:50px;height:74px}.cards{height:78px}.sidebet .name{font-size:10px}.stat-line{font-size:8px}.stat-line b{font-size:10px}}
+
+/* ===== REFERENCE CHIP + ROADMAP DETAILS ===== */
+.chip{background-color:#444!important;background-image:
+ radial-gradient(circle at 50% 50%,rgba(255,255,255,.06) 0 34%,transparent 35%),
+ radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(255,255,255,.2) 59% 61%,transparent 62%),
+ conic-gradient(from 0deg,transparent 0 5deg,#e9e7df 5deg 14deg,transparent 14deg 40deg,#e9e7df 40deg 49deg,transparent 49deg 76deg,#e9e7df 76deg 85deg,transparent 85deg 112deg,#e9e7df 112deg 121deg,transparent 121deg 148deg,#e9e7df 148deg 157deg,transparent 157deg 184deg,#e9e7df 184deg 193deg,transparent 193deg 220deg,#e9e7df 220deg 229deg,transparent 229deg 256deg,#e9e7df 256deg 265deg,transparent 265deg 292deg,#e9e7df 292deg 301deg,transparent 301deg 328deg,#e9e7df 328deg 337deg,transparent 337deg),
+ radial-gradient(circle at 35% 28%,rgba(255,255,255,.16),transparent 28%)!important}
+.chip:before{content:""!important;position:absolute!important;inset:8px!important;border-radius:50%!important;border:2px solid rgba(240,240,235,.7)!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.22),inset 0 0 0 6px rgba(255,255,255,.07)!important}
+.chip:after{content:""!important;position:absolute!important;inset:15px!important;border-radius:50%!important;border:1px dashed rgba(240,240,235,.72)!important;box-shadow:inset 0 0 8px rgba(0,0,0,.35)!important}
+.chip-red{background-color:#914441!important}.chip-green{background-color:#3f745d!important}.chip-blue{background-color:#435f96!important}.chip-white{background-color:#d8d8d2!important;color:#222!important;text-shadow:none!important}.chip-black{background-color:#34363a!important}.chip-purple{background-color:#5d526b!important}
+.chip.selected{transform:scale(1.12);filter:brightness(1.12)}
+
+.road-panel{margin-top:5px;background:#101010;border:1px solid #444;border-radius:5px;padding:5px}
+.road-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px}
+.road-tab{height:30px;border:1px solid #444;border-radius:4px;background:#191919;color:#aaa;font-size:10px;font-weight:800}
+.road-tab.active{background:#292929;color:#fff;border-color:#777}
+.road-view{display:none}.road-view.active{display:block}
+.road-label{font-size:9px;color:#999;margin:2px 0 4px}
+.big-road-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid #292929;border-radius:3px;background:#090909;scrollbar-width:none}
+.big-road-wrap::-webkit-scrollbar{display:none}
+.big-road-grid{display:grid;grid-template-rows:repeat(6,18px);grid-auto-flow:column;grid-auto-columns:18px;gap:2px;width:max-content;padding:4px}
+.big-dot{width:18px;height:18px;box-sizing:border-box;border-radius:50%;border:1px solid #444;background:#171717;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;position:relative}
+.big-dot.P{color:#4e8dff;border-color:#2867d8}.big-dot.B{color:#f05b5b;border-color:#b52a2a}
+.big-dot[data-ties]::after{content:attr(data-ties);position:absolute;right:-4px;top:-6px;background:#0a0a0a;color:#ddd;font-size:6px;border-radius:3px;padding:0 2px}
+.sequence-grid{display:grid;grid-template-columns:repeat(12,18px);grid-auto-rows:18px;gap:2px;width:max-content;min-width:100%;padding:4px;box-sizing:border-box}
+.sequence-dot{width:18px;height:18px;box-sizing:border-box;border:1px solid #444;border-radius:50%;background:#171717;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900}
+.sequence-dot.P{color:#4e8dff;border-color:#2867d8}.sequence-dot.B{color:#f05b5b;border-color:#b52a2a}.sequence-dot.T{color:#63d77a;border-color:#369a4d}
+@media(max-width:420px){.road-panel{padding:4px}.big-road-grid{grid-template-rows:repeat(6,16px);grid-auto-columns:16px;gap:2px}.big-dot{width:16px;height:16px;font-size:7px}.chip{width:48px;height:48px;flex-basis:48px}}
+
+
+/* ===== USER REFERENCE VISUAL MATCH — FINAL OVERRIDE ===== */
+.board{grid-template-columns:1fr 1.05fr 1fr;gap:6px}
+.zone{border-width:3px;border-radius:7px}
+.player{border-color:#1669e8;background:linear-gradient(180deg,#1d5fbd 0%,#103e8c 48%,#071d54 100%)}
+.banker{border-color:#b51d20;background:linear-gradient(180deg,#7f1718 0%,#531011 48%,#2a0506 100%)}
+.tie{background:linear-gradient(180deg,#277c23 0%,#135516 48%,#092b09 100%);border-radius:66px 66px 7px 7px}
+.zone-inner{padding:9px 5px 6px}
+.title{font-size:21px;line-height:24px}
+.pool{font-size:18px;line-height:21px;font-weight:900}
+.users{font-size:12px;line-height:16px}
+.big-score{font-size:31px;line-height:32px}
+.cards{gap:4px;margin-top:6px;height:82px}
+.card{width:54px;height:78px;border-radius:4px;font-size:18px}
+.card .s{font-size:27px}
+.table-chip{width:54px;height:54px;font-size:11px}
+
+.share-badge{position:absolute;top:15px;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;z-index:2}
+.share-badge:before{content:"";position:absolute;inset:0;border-radius:50%;border:4px solid rgba(255,255,255,.12);border-right-color:currentColor;transform:rotate(-38deg)}
+.share-badge:after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid currentColor;opacity:.3}
+.share-badge span{font-size:13px;position:relative;z-index:1}
+.share-p{left:8px;color:#4d9cff}.share-b{right:8px;color:#e84a4d}.share-t{top:18px;left:50%;transform:translateX(-50%);width:48px;height:48px;color:#65d75a}
+.share-t:before{border-width:3px}.share-t span{font-size:11px}
+.player .title{margin-top:2px}.banker .title{margin-top:2px}.tie .title{margin-top:8px}
+
+/* Side-bet strip styled like the supplied drawing. Pair bets remain functional. */
+.sidebet{height:55px;border-radius:5px;border:2px solid #5c5c5c;background:linear-gradient(180deg,#515151,#272727 58%,#191919);box-shadow:inset 0 1px rgba(255,255,255,.12),0 3px 6px #000;color:#ddd}
+.sidebet .name{font-size:12px;line-height:14px;text-align:center}
+.sidebet .rate{font-size:9px;color:#bcbcbc}
+.sidebet .amount{font-size:10px;color:#e4c45a}
+.sidebet:nth-child(2) .name{font-size:11px}
+
+/* Chips: preserve the existing UI/values, but copy the reference chip's shape language and print pattern. */
+.chips{gap:8px;overflow-x:auto;justify-content:flex-start;padding:4px 4px 7px}
+.chip,.chip.s,.chip.g,.chip.r,.chip.p,.chip.b,.chip-red,.chip-green,.chip-blue,.chip-white,.chip-black,.chip-purple{width:58px!important;height:58px!important;flex:0 0 58px!important;border:0!important;border-radius:50%!important;position:relative!important;overflow:hidden!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:10px!important;line-height:11px!important;letter-spacing:-.35px!important;font-weight:900!important;z-index:0!important;text-shadow:0 1px 2px rgba(0,0,0,.65)!important;box-shadow:0 3px 8px rgba(0,0,0,.7),inset 0 -5px 8px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.18)!important;filter:none!important}
+/* Reference chip pattern: exactly 5 outer white inserts, kept on the rim only. */
+.chip:before{content:""!important;position:absolute!important;inset:0!important;border-radius:50%!important;border:0!important;box-shadow:none!important;pointer-events:none!important;background:
+ conic-gradient(from 0deg, #eeeae0 12deg 36deg,transparent 36deg 84deg,#eeeae0 84deg 108deg,transparent 108deg 156deg,#eeeae0 156deg 180deg,transparent 180deg 228deg,#eeeae0 228deg 252deg,transparent 252deg 300deg,#eeeae0 300deg 324deg,transparent 324deg 360deg)!important;
+-webkit-mask:radial-gradient(circle,transparent 0 66%,#000 67% 100%)!important;
+mask:radial-gradient(circle,transparent 0 66%,#000 67% 100%)!important;
+z-index:0!important}
+/* Inner ring: short separated marks, never extending into the center. */
+.chip:after{content:""!important;position:absolute!important;inset:9px!important;border-radius:50%!important;border:2px solid rgba(238,238,232,.72)!important;box-shadow:
+ inset 0 0 0 3px rgba(0,0,0,.24),
+ inset 0 0 0 7px rgba(255,255,255,.08),
+ inset 0 0 0 10px rgba(0,0,0,.10)!important;
+pointer-events:none!important;z-index:1!important;background:
+ repeating-conic-gradient(from 0deg,rgba(238,238,232,.78) 0 4deg,transparent 4deg 36deg) center/100% 100% no-repeat!important;
+-webkit-mask:radial-gradient(circle,transparent 0 67%,#000 68% 100%)!important;
+mask:radial-gradient(circle,transparent 0 67%,#000 68% 100%)!important}
+.chip{background:#3f5d92!important}
+.chip:nth-child(1),.chip:nth-child(6){background:#9a4742!important;color:#fff!important}
+.chip:nth-child(2),.chip:nth-child(7){background:#3f7c61!important;color:#fff!important}
+.chip:nth-child(3),.chip:nth-child(8){background:#405fa0!important;color:#fff!important}
+.chip:nth-child(4){background:#d7d8d5!important;color:#252a31!important;text-shadow:none!important}
+.chip:nth-child(5),.chip:nth-child(9){background:#34363b!important;color:#fff!important}
+.chip.selected{transform:scale(1.1)!important;box-shadow:0 0 0 2px #e3c75d,0 0 14px rgba(227,199,93,.55),0 3px 8px #000!important}
+.chip:active{transform:scale(.96)!important}
+
+/* Readable denomination: use full comma-separated amounts, not K/M abbreviations. */
+.chip{font-variant-numeric:tabular-nums}
+@media(max-width:420px){
+  .board{gap:4px}
+  .share-badge{width:52px;height:52px;top:13px}.share-badge span{font-size:11px}.share-t{width:43px;height:43px}
+  .title{font-size:18px}.pool{font-size:13px}.big-score{font-size:27px}.card{width:49px;height:73px}.cards{height:76px}
+  .chip,.chip.s,.chip.g,.chip.r,.chip.p,.chip.b,.chip-red,.chip-green,.chip-blue,.chip-white,.chip-black,.chip-purple{width:56px!important;height:56px!important;flex-basis:56px!important;font-size:9px!important;line-height:10px!important}
+  .sidebet{height:52px}.sidebet .name{font-size:10px}.sidebet:nth-child(2) .name{font-size:9px}
+}
+
+
+/* ===== USER REQUEST: CLEAN REFERENCE MATCH ===== */
+/* Remove the percentage/ring overlays; keep only the three simple table zones from the reference. */
+.share-badge{display:none!important}
+
+/* Keep the exact simple silhouettes: blue rectangle / green arch / red rectangle. */
+.board{grid-template-columns:1fr 1.05fr 1fr;gap:5px}
+.zone{border-radius:7px}
+.player{border:3px solid #1669e8;background:linear-gradient(180deg,#245fb8 0%,#123f8b 52%,#081e52 100%)}
+.banker{border:3px solid #b51d20;background:linear-gradient(180deg,#801819 0%,#571011 52%,#2b0506 100%)}
+.tie{border:0;border-radius:66px 66px 7px 7px;background:linear-gradient(180deg,#2b7d24 0%,#145717 52%,#092c09 100%)}
+
+/* Chips: stronger, darker colors; the denomination is the topmost layer. */
+.chip,.chip.s,.chip.g,.chip.r,.chip.p,.chip.b{
+  isolation:isolate!important;
+  color:#fff!important;
+  text-shadow:0 1px 2px #000,0 0 2px #000!important;
+}
+.chip.s{background:#24457f!important}
+.chip.g{background:#17613f!important}
+.chip.r{background:#8b2421!important}
+.chip.p{background:#eeeae1!important;color:#171717!important;text-shadow:none!important}
+.chip.b{background:#181a1f!important}
+.chip:before{z-index:0!important}
+.chip:after{z-index:1!important}
+.chip-label{
+  position:relative!important;
+  z-index:10!important;
+  display:block!important;
+  width:100%!important;
+  text-align:center!important;
+  font-size:10px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+  pointer-events:none!important;
+}
+.chip.p .chip-label{color:#171717!important;text-shadow:none!important}
+@media(max-width:420px){.chip-label{font-size:9px!important}}
+
+
+/* ===== MOBILE HEIGHT FIT FIX ===== */
+html,body{height:100%;min-height:100dvh}
+#app{height:100dvh;min-height:100dvh}
+.game{height:100dvh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+@media(max-width:599px) and (max-height:780px){
+  .deck-top{height:82px;flex-basis:82px}
+  .result{height:88px;flex-basis:88px}
+  .board{height:250px}
+  .zone-inner{padding-top:7px;padding-bottom:5px}
+  .title{font-size:19px;line-height:21px}
+  .pool{font-size:16px;line-height:18px}
+  .users{font-size:11px;line-height:14px}
+  .big-score{font-size:27px;line-height:29px}
+  .cards{height:74px;margin-top:4px}
+  .card{width:50px;height:70px;font-size:17px}
+  .card .s{font-size:24px}
+  .table-chip{width:48px;height:48px}
+  .bet{height:62px}
+  .controls{margin-top:5px;padding:5px}
+  .balance{font-size:15px;margin-bottom:5px}
+  .chips{margin-bottom:5px}
+  .chip,.chip.s,.chip.g,.chip.r,.chip.p,.chip.b,.chip-red,.chip-green,.chip-blue,.chip-white,.chip-black,.chip-purple{width:50px!important;height:50px!important;flex-basis:50px!important}
+  .actions{gap:4px}
+  .action{height:42px}
+  .message{height:18px;line-height:18px}
+}
+
+@media(max-width:430px){.sidebets{gap:3px}.sidebet{height:54px}.sidebet .name{font-size:9px;letter-spacing:-.7px}.sidebet .rate{font-size:7px}.sidebet .amount{font-size:8px}}
+
+/* Mobile Chrome viewport / bottom clipping fix */
+html,body{
+  width:100%;
+  min-height:100%;
+  margin:0;
+  padding:0;
+}
+body{
+  min-height:100dvh;
+  height:auto;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#app, .app, main, .page{
+  min-height:100dvh;
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+  box-sizing:border-box;
+}
+@supports not (height: 100dvh){
+  body{min-min-height:100dvh;}
+}
+@media (max-width:600px){
+  body{
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+}
+
+
+
+/* ===== PREMIUM CASINO VISUAL OVERRIDE =====
+   Visual-only refinement: layout, HTML structure and game logic remain unchanged. */
+html,body{
+  background:#0b0b0a!important;
+  color:#f4f0e8;
+  font-family:"Pretendard Variable","Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif!important;
+}
+#app{
+  background:
+    radial-gradient(ellipse at 50% 4%,rgba(115,91,57,.34) 0%,rgba(45,34,24,.22) 24%,transparent 48%),
+    radial-gradient(ellipse at 50% 42%,#201b16 0%,#110f0d 57%,#070706 100%)!important;
+}
+#app:before{
+  background:
+    linear-gradient(180deg,rgba(255,228,174,.07),transparent 22%,rgba(0,0,0,.16) 54%,rgba(0,0,0,.72) 100%)!important;
+}
+#app:after{
+  background:
+    radial-gradient(circle at 20% 12%,rgba(255,220,150,.10) 0 1px,transparent 2px),
+    radial-gradient(circle at 80% 14%,rgba(255,220,150,.08) 0 1px,transparent 2px),
+    linear-gradient(180deg,transparent 0 38%,rgba(0,0,0,.12) 58%,rgba(0,0,0,.72) 100%)!important;
+  opacity:.7!important;
+}
+.deck-top{filter:drop-shadow(0 5px 12px rgba(0,0,0,.45))}
+.tcard,.card{
+  background:linear-gradient(145deg,#fffdf8,#e7e2d8)!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.62),inset 0 0 0 1px rgba(80,65,45,.12)!important;
+  color:#171717!important;
+}
+.tcard.red,.card.red{color:#9d2626!important}
+.result-word{color:#d9d0c2!important;letter-spacing:.1px}
+.result-money{color:#e3bd69!important;text-shadow:0 2px 8px rgba(0,0,0,.65)}
+.ribbon{
+  background:linear-gradient(90deg,transparent,#1b4472 12%,#315f8f 50%,#1b4472 88%,transparent)!important;
+  text-shadow:0 2px 4px #000!important;
+}
+.result.banker-win .ribbon{
+  background:linear-gradient(90deg,transparent,#6e1d20 12%,#963033 50%,#6e1d20 88%,transparent)!important;
+}
+.board{gap:5px!important}
+.zone{
+  border-radius:8px!important;
+  box-shadow:inset 0 0 28px rgba(0,0,0,.52),0 5px 14px rgba(0,0,0,.52)!important;
+}
+.player{
+  border-color:#285f9e!important;
+  background:
+    linear-gradient(180deg,rgba(24,57,91,.96),rgba(8,24,40,.98))!important;
+}
+.banker{
+  border-color:#8f3030!important;
+  background:
+    linear-gradient(180deg,rgba(82,26,27,.97),rgba(35,10,11,.99))!important;
+}
+.tie{
+  background:
+    linear-gradient(180deg,rgba(35,84,43,.98),rgba(10,35,17,.99))!important;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.55),0 5px 14px rgba(0,0,0,.52)!important;
+}
+.title{color:#f2eee6!important;text-shadow:0 2px 5px rgba(0,0,0,.85)!important;letter-spacing:-.3px}
+.pool{color:#d9e7f2!important}
+.banker .pool{color:#e9a2a0!important}
+.users{color:#bdb8ae!important}
+.big-score{color:#f7f3eb!important;text-shadow:0 2px 6px rgba(0,0,0,.75)!important}
+.table-chip{
+  background:radial-gradient(circle at 35% 30%,#4b4b4a,#171716 60%,#080808)!important;
+  border-color:#b9b1a3!important;
+  box-shadow:0 0 0 2px #282622,0 4px 10px #000!important;
+}
+.bets{gap:5px!important}
+.bet,.sidebet{
+  border-color:#4b4740!important;
+  background:linear-gradient(180deg,#302e2a,#171614 58%,#0d0c0b)!important;
+  color:#e5e0d6!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.08),0 4px 9px rgba(0,0,0,.62)!important;
+}
+.bet:active,.bet.on,.sidebet.on{
+  border-color:#c7a45a!important;
+  box-shadow:inset 0 0 16px rgba(184,145,58,.16),0 0 10px rgba(191,153,70,.14)!important;
+}
+.bet .rate,.sidebet .rate{color:#9f9a91!important}
+.bet .amount,.sidebet .amount{color:#d6b565!important}
+.controls{
+  background:linear-gradient(180deg,#242321,#0f0f0e)!important;
+  border-color:#45423c!important;
+  box-shadow:0 6px 15px rgba(0,0,0,.7),inset 0 1px rgba(255,255,255,.05)!important;
+}
+.balance{color:#dfbf73!important;text-shadow:0 1px 4px #000}
+.chip{filter:saturate(.88) brightness(.92)!important}
+.chip.selected{filter:saturate(.95) brightness(1.08)!important}
+.actions{gap:6px!important}
+.action{
+  border-color:#514e47!important;
+  background:linear-gradient(180deg,#373531,#171614)!important;
+  color:#eee9df!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.09),0 4px 8px #000!important;
+}
+.action.deal{
+  background:linear-gradient(180deg,#d6b66a,#896a2c)!important;
+  color:#181207!important;
+  border-color:#e6c978!important;
+  text-shadow:0 1px rgba(255,255,255,.25)!important;
+}
+.message{color:#aaa49a!important}
+.sidebets{gap:5px!important}
+.road-panel,.road{
+  background:linear-gradient(180deg,#171614,#0b0b0a)!important;
+  border-color:#403d37!important;
+  box-shadow:0 5px 12px rgba(0,0,0,.55)!important;
+}
+.road-tab{background:#121211!important;border-color:#393731!important;color:#928e85!important}
+.road-tab.active{background:linear-gradient(180deg,#2c2a26,#181715)!important;color:#eee8dd!important;border-color:#8a7752!important}
+.road-label{color:#88837a!important}
+.big-road-wrap{background:#080808!important;border-color:#302e29!important}
+.big-dot,.sequence-dot{background:#111!important;border-color:#3a3833!important}
+.big-dot.P,.sequence-dot.P{color:#6ea7df!important;border-color:#285f9e!important}
+.big-dot.B,.sequence-dot.B{color:#d87575!important;border-color:#8f3030!important}
+.sequence-dot.T{color:#72b87a!important;border-color:#3d7945!important}
+.stat-line span{background:#121211!important;color:#aaa69e!important}
+.stat-line b{color:#d6b565!important}
+.shoe-line{color:#858078!important}
+.shoe-line strong{color:#ddd7cc!important}
+.shoe-meter{background:#171715!important}
+.shoe-fill{background:linear-gradient(90deg,#d1b15f,#70541f)!important}
+@media(max-width:420px){
+  .title{font-size:18px!important}
+  .pool{font-size:13px!important}
+}
+
+
+/* FINAL CHIP PATTERN FIX: 5 outer-only white segments, never extending into center. */
+.chip{
+  background-image:
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.18),transparent 28%),
+    radial-gradient(circle at 50% 50%,transparent 0 68%,rgba(255,255,255,.02) 69% 100%);
+}
+.chip:before{
+  inset:0;
+  border:0;
+  background:
+    conic-gradient(from 0deg,
+      transparent 0 18deg, #e8e6df 18deg 34deg, transparent 34deg 90deg,
+      #e8e6df 90deg 106deg, transparent 106deg 162deg,
+      #e8e6df 162deg 178deg, transparent 178deg 234deg,
+      #e8e6df 234deg 250deg, transparent 250deg 306deg,
+      #e8e6df 306deg 322deg, transparent 322deg 360deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 69%,#000 70% 100%);
+  mask:radial-gradient(circle,transparent 0 69%,#000 70% 100%);
+  pointer-events:none;
+}
+.chip:after{
+  inset:9px;
+  border:2px solid rgba(235,235,230,.7);
+  border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.2),inset 0 0 0 6px rgba(255,255,255,.08);
+}
+.chip.s,.chip.g,.chip.r,.chip.p,.chip.b{
+  background-image:radial-gradient(circle at 35% 28%,rgba(255,255,255,.18),transparent 28%);
+}
+.chip-white,.chip[data-value="500000"]{
+  background-image:radial-gradient(circle at 35% 28%,rgba(255,255,255,.35),transparent 28%);
+}
+.chip-white:before,.chip[data-value="500000"]:before{
+  background:conic-gradient(from 0deg,transparent 0 18deg,#4969a2 18deg 34deg,transparent 34deg 90deg,#4969a2 90deg 106deg,transparent 106deg 162deg,#4969a2 162deg 178deg,transparent 178deg 234deg,#4969a2 234deg 250deg,transparent 250deg 306deg,#4969a2 306deg 322deg,transparent 322deg 360deg);
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="game">
+  <div class="deck-top"><div id="topP" class="top-left"></div><div id="topB" class="top-right"></div></div>
+
+  <div class="result">
+    <div id="resultTitle" class="ribbon">플레이어</div>
+    <div id="resultWord" class="result-word">베팅을 시작하세요</div>
+    <div id="resultMoney" class="result-money">₩0</div>
+  </div>
+
+  <div class="table">
+    <div class="board">
+      <div class="zone player"><div class="zone-inner">
+        <div class="title">플레이어</div><div id="pPool" class="pool">₩0</div><div class="users">♟ <span id="pUsers">0</span></div>
+        <div id="pScore" class="big-score">0</div><div id="pCards" class="cards"></div><div id="pChip" class="table-chip">₩0</div>
+      </div></div>
+
+      <div class="zone tie"><div class="zone-inner">
+        <div class="title">무</div><div id="tScore" class="big-score">0</div>
+        <div class="tie-bottom"><div class="tie-label">무</div><div class="tie-rate">8:1</div></div>
+      </div></div>
+
+      <div class="zone banker"><div class="zone-inner">
+        <div class="title">뱅커</div><div id="bPool" class="pool">₩0</div><div class="users">♟ <span id="bUsers">0</span></div>
+        <div id="bScore" class="big-score">0</div><div id="bCards" class="cards"></div><div id="bChip" class="table-chip">₩0</div>
+      </div></div>
+    </div>
+
+    <div id="sideBets" class="sidebets">
+      <button class="sidebet" data-bet="PLAYER_BONUS"><span class="name">플레이어 보너스</span><span class="rate">상황별</span><span id="betPB" class="amount">₩0</span></button>
+      <button class="sidebet" data-bet="PLAYER_PAIR"><span class="name">플레이어 페어</span><span class="rate">11 : 1</span><span id="betPP" class="amount">₩0</span></button>
+      <button class="sidebet" data-bet="EITHER_PAIR"><span class="name">이더 페어</span><span class="rate">5 : 1</span><span id="betEP" class="amount">₩0</span></button>
+      <button class="sidebet" data-bet="BANKER_PAIR"><span class="name">뱅커 페어</span><span class="rate">11 : 1</span><span id="betBP" class="amount">₩0</span></button>
+      <button class="sidebet" data-bet="BANKER_BONUS"><span class="name">뱅커 보너스</span><span class="rate">상황별</span><span id="betBB" class="amount">₩0</span></button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="balance">보유금액 <span id="balance">₩10,000</span></div>
+    <div class="chips">
+      <button class="chip s selected" data-value="1000"><span class="chip-label">1,000</span></button>
+      <button class="chip g" data-value="5000"><span class="chip-label">5,000</span></button>
+      <button class="chip r" data-value="10000"><span class="chip-label">10,000</span></button>
+      <button class="chip p" data-value="50000"><span class="chip-label">50,000</span></button>
+      <button class="chip b" data-value="100000"><span class="chip-label">100,000</span></button>
+    </div>
+    <div class="actions"><button id="clear" class="action">CLEAR</button><button id="deal" class="action deal">DEAL</button><button id="new" class="action">NEW</button></div>
+    <div id="message" class="message">칩을 선택하고 베팅 영역을 터치하세요.</div>
+  </div>
+
+  <div class="road-panel">
+  <div class="road-tabs">
+    <button type="button" class="road-tab active" data-road-tab="big">바카라 빅로드</button>
+    <button type="button" class="road-tab" data-road-tab="sequence">순서형 로드맵</button>
+  </div>
+  <div id="bigRoadView" class="road-view active">
+    <div class="road-label">실제 바카라 빅로드</div>
+    <div class="big-road-wrap"><div id="bigRoadGrid" class="big-road-grid"></div></div>
+  </div>
+  <div id="sequenceRoadView" class="road-view">
+    <div class="road-label">결과가 나온 순서 그대로</div>
+    <div id="sequenceGrid" class="sequence-grid"></div>
+  </div>
+</div>
+</div></div>
+
+
+
+<script>
+/* ===== ADDITIVE GAME ENGINE ===== */
+(function(){
+  const q=s=>document.querySelector(s), qa=s=>Array.from(document.querySelectorAll(s));
+  const money=n=>"₩"+Math.floor(n).toLocaleString("ko-KR");
+  // Replace only the clickable controls with clones so the original listeners cannot fire twice.
+  ["clear","deal","new"].forEach(id=>{const old=document.getElementById(id);if(old){const n=old.cloneNode(true);old.replaceWith(n)}});
+  qa(".chip,.bet").forEach(old=>{const n=old.cloneNode(true);old.replaceWith(n)});
+
+  let balance=10000, selected=1000, bets={PLAYER:0,TIE:0,BANKER:0,PLAYER_BONUS:0,PLAYER_PAIR:0,EITHER_PAIR:0,BANKER_PAIR:0,BANKER_BONUS:0};
+  let shoe=[], shoeNo=1, history=[], rounds=0, wins={PLAYER:0,BANKER:0,TIE:0}, pairs=0, busy=false;
+  const suits=["♠","♥","♦","♣"], vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  function cardValue(c){return c.value==="A"?1:["10","J","Q","K"].includes(c.value)?0:+c.value}
+  function score(h){return h.reduce((a,c)=>a+cardValue(c),0)%10}
+  function shuffle(){shoe=[];for(let x=0;x<8;x++)for(const suit of suits)for(const value of vals)shoe.push({suit,value});for(let i=shoe.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shoe[i],shoe[j]]=[shoe[j],shoe[i]]}}
+  function draw(){if(shoe.length<12){shoeNo++;shuffle()}return shoe.pop()}
+  function makeCard(c){const d=document.createElement("div");d.className="card deal-in"+((c.suit==="♥"||c.suit==="♦")?" red":"");d.innerHTML="<div>"+c.value+"</div><div class='s'>"+c.suit+"</div><div class='b'>"+c.value+"</div>";return d}
+  function render(id,h){const e=document.getElementById(id);e.innerHTML="";h.forEach(c=>e.appendChild(makeCard(c)))}
+  function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+  function update(){
+    setText("balance",money(balance));setText("pPool",money(bets.PLAYER));setText("bPool",money(bets.BANKER));setText("pChip",money(bets.PLAYER));setText("bChip",money(bets.BANKER));
+    setText("betPB",money(bets.PLAYER_BONUS));setText("betPP",money(bets.PLAYER_PAIR));setText("betEP",money(bets.EITHER_PAIR));setText("betBP",money(bets.BANKER_PAIR));setText("betBB",money(bets.BANKER_BONUS));
+    qa(".bet,.sidebet").forEach(x=>x.classList.toggle("on",(bets[x.dataset.bet]||0)>0));
+    setText("shoeRemain",shoe.length);setText("shoeNo","#"+shoeNo);setText("statP",wins.PLAYER);setText("statB",wins.BANKER);setText("statT",wins.TIE);setText("statPair",pairs);setText("statRounds",rounds);
+    const fill=document.getElementById("shoeFill");if(fill)fill.style.width=(shoe.length/416*100)+"%";
+  }
+  function choose(v){if(busy)return;selected=v;qa(".chip").forEach(x=>x.classList.toggle("selected",+x.dataset.value===v))}
+  function placeBet(t){if(busy)return;if(balance<selected){setText("message","보유금액이 부족합니다.");return}balance-=selected;bets[t]+=selected;setText("message",(t==="PLAYER"?"플레이어":t==="BANKER"?"뱅커":t==="TIE"?"무":t==="PLAYER_BONUS"?"플레이어 보너스":t==="PLAYER_PAIR"?"플레이어 페어":t==="EITHER_PAIR"?"이더 페어":t==="BANKER_PAIR"?"뱅커 페어":"뱅커 보너스")+" "+money(selected)+" 베팅");update();navigator.vibrate?.(8)}
+  function clearB(){if(busy)return;balance+=Object.values(bets).reduce((a,b)=>a+b,0);bets={PLAYER:0,TIE:0,BANKER:0,PLAYER_BONUS:0,PLAYER_PAIR:0,EITHER_PAIR:0,BANKER_PAIR:0,BANKER_BONUS:0};setText("message","베팅을 취소했습니다.");update();navigator.vibrate?.(10)}
+  function pair(a,b){return a&&b&&a.value===b.value}
+  function bankerThird(p3,b){const v=cardValue(p3),s=score(b);if(s<=2)return true;if(s===3)return v!==8;if(s===4)return v>=2&&v<=7;if(s===5)return v>=4&&v<=7;if(s===6)return v===6||v===7;return false}
+  function bonusReturn(stake,side,ps,bs,p,b,w){
+    if(!stake)return 0;
+    const natural=side==="PLAYER" ? (p.length===2&&(ps===8||ps===9)) : (b.length===2&&(bs===8||bs===9));
+    const otherNatural=side==="PLAYER" ? (b.length===2&&(bs===8||bs===9)) : (p.length===2&&(ps===8||ps===9));
+    const margin=side==="PLAYER" ? ps-bs : bs-ps;
+    if(w===side){
+      if(natural)return stake*2;
+      const odds={4:1,5:2,6:4,7:6,8:10,9:30};
+      if(margin>=4)return stake*(1+(odds[Math.min(margin,9)]||0));
+    }
+    if(w==="TIE"&&natural&&otherNatural)return stake;
+    return 0;
+  }
+  function deal(){
+    if(busy)return;if(Object.values(bets).every(v=>v===0)){setText("message","먼저 베팅하세요.");return}
+    busy=true; qa(".bet,.sidebet,.chip").forEach(x=>x.classList.add("tap-scale"));
+    const p=[draw(),draw()], b=[draw(),draw()];let ps=score(p),bs=score(b);
+    if(!(ps>=8||bs>=8)){
+      if(ps<=5){const p3=draw();p.push(p3);ps=score(p);if(bankerThird(p3,b))b.push(draw())}
+      else if(bs<=5)b.push(draw());
+    }
+    bs=score(b);ps=score(p);render("pCards",p);render("bCards",b);setText("pScore",ps);setText("bScore",bs);
+    const w=ps>bs?"PLAYER":bs>ps?"BANKER":"TIE";history.push(w);if(history.length>72)history.shift();rounds++;wins[w]++;
+    const pp=pair(p[0],p[1]),bp=pair(b[0],b[1]),either=pp||bp;if(either)pairs++;
+    let pay=0;
+    if(w==="PLAYER")pay+=bets.PLAYER*2;else if(w==="BANKER")pay+=Math.floor(bets.BANKER*1.95);else pay+=bets.TIE*9+bets.PLAYER+bets.BANKER;
+    // Dragon Bonus style payouts: natural 8/9 = 1:1; margin 4/5/6/7/8/9 = 1/2/4/6/10/30:1.
+    pay+=bonusReturn(bets.PLAYER_BONUS,"PLAYER",ps,bs,p,b,w);
+    pay+=bonusReturn(bets.BANKER_BONUS,"BANKER",ps,bs,p,b,w);
+    if(pp)pay+=bets.PLAYER_PAIR*12;
+    if(bp)pay+=bets.BANKER_PAIR*12;
+    if(either)pay+=bets.EITHER_PAIR*6;
+    balance+=pay;
+    const resultEl=document.querySelector(".result");resultEl?.classList.remove("player-win","banker-win");
+    if(w==="PLAYER"){resultEl?.classList.add("player-win");setText("resultTitle","플레이어");setText("resultWord","이겼습니다");setText("resultMoney","+"+money(pay));}
+    else if(w==="BANKER"){resultEl?.classList.add("banker-win");setText("resultTitle","뱅커");setText("resultWord","이겼습니다");setText("resultMoney","+"+money(pay));}
+    else{setText("resultTitle","");setText("resultWord","베팅을 시작하세요");setText("resultMoney","");}
+    setText("message",(w==="PLAYER"?"플레이어 승":w==="BANKER"?"뱅커 승":"무승부")+" · "+money(pay)+" 지급");
+    document.querySelector(".result")?.classList.add("flash-win");setTimeout(()=>document.querySelector(".result")?.classList.remove("flash-win"),1200);
+    drawRoad();bets={PLAYER:0,TIE:0,BANKER:0,PLAYER_BONUS:0,PLAYER_PAIR:0,EITHER_PAIR:0,BANKER_PAIR:0,BANKER_BONUS:0};busy=false;update();navigator.vibrate?.(18);
+    playDealSound();
+  }
+  function drawRoad(){
+    const big=document.getElementById("bigRoadGrid");
+    const seq=document.getElementById("sequenceGrid");
+    if(!big||!seq)return;
+
+    // 1) Baccarat Big Road:
+    // Ties do not create a new bead/column; they are attached to the most recent
+    // PLAYER/BANKER result. A change starts a new column; a streak grows downward
+    // to six rows, then continues to the right.
+    const outcomes=history.filter(v=>v==="PLAYER"||v==="BANKER");
+    const rows=6, cols=72;
+    const cells=Array.from({length:rows},()=>Array(cols).fill(null));
+    let col=0,row=0,last=null;
+    outcomes.forEach(v=>{
+      if(last===null){ col=0; row=0; }
+      else if(v!==last){ col+=1; row=0; while(col<cols && cells[row][col]) col++; }
+      else if(row<rows-1 && !cells[row+1][col]){ row+=1; }
+      else{ col+=1; row=0; while(col<cols && cells[row][col]) col++; }
+      if(col>=cols)return;
+      cells[row][col]=v;
+      last=v;
+    });
+
+    // Count ties and place them on the most recent bead.
+    let tieCount=0;
+    for(let i=history.length-1;i>=0;i--){
+      if(history[i]==="TIE") tieCount++;
+      else if(history[i]==="PLAYER"||history[i]==="BANKER") break;
+    }
+    if(tieCount>0){
+      outer:
+      for(let r=0;r<rows;r++)for(let c=cols-1;c>=0;c--){
+        if(cells[r][c]){cells[r][c].datasetTies=tieCount;break outer;}
+      }
+    }
+
+    big.innerHTML="";
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      const d=document.createElement("div");
+      d.className="big-dot";
+      const v=cells[r][c];
+      if(v){d.classList.add(v==="PLAYER"?"P":"B");d.textContent=v==="PLAYER"?"P":"B";}
+      if(v && cells[r][c].datasetTies)d.dataset.ties=cells[r][c].datasetTies;
+      big.appendChild(d);
+    }
+
+    // 2) Simple chronological map: every result occupies the next cell.
+    seq.innerHTML="";
+    history.slice(-72).forEach(v=>{
+      const d=document.createElement("div");
+      d.className="sequence-dot "+(v==="PLAYER"?"P":v==="BANKER"?"B":"T");
+      d.textContent=v==="PLAYER"?"P":v==="BANKER"?"B":"T";
+      seq.appendChild(d);
+    });
+    for(let i=history.slice(-72).length;i<72;i++){
+      const d=document.createElement("div");d.className="sequence-dot";seq.appendChild(d);
+    }
+  }
+
+  // Roadmap tabs.
+  qa("[data-road-tab]").forEach(tab=>{
+    tab.addEventListener("click",()=>{
+      qa("[data-road-tab]").forEach(x=>x.classList.remove("active"));
+      qa(".road-view").forEach(x=>x.classList.remove("active"));
+      tab.classList.add("active");
+      const id=tab.dataset.roadTab==="big"?"bigRoadView":"sequenceRoadView";
+      document.getElementById(id)?.classList.add("active");
+    });
+  })
+  function reset(){balance=10000;selected=1000;bets={PLAYER:0,TIE:0,BANKER:0,PLAYER_BONUS:0,PLAYER_PAIR:0,EITHER_PAIR:0,BANKER_PAIR:0,BANKER_BONUS:0};history=[];rounds=0;wins={PLAYER:0,BANKER:0,TIE:0};pairs=0;busy=false;shoeNo=1;shuffle();["pCards","bCards"].forEach(id=>document.getElementById(id).innerHTML="");setText("pScore","0");setText("bScore","0");const resultEl=document.querySelector(".result");resultEl?.classList.remove("player-win","banker-win");setText("resultTitle","");setText("resultWord","베팅을 시작하세요");setText("resultMoney","");setText("message","칩을 선택하고 베팅 영역을 터치하세요.");drawRoad();update();choose(1000)}
+  function playDealSound(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C();[0,.12,.24,.36].forEach((t,i)=>{const o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=180+i*35;g.gain.setValueAtTime(.0001,c.currentTime+t);g.gain.exponentialRampToValueAtTime(.07,c.currentTime+t+.015);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.09);o.connect(g);g.connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.1)})}catch(e){}}
+  const chipValues=[1000,5000,10000,50000,100000,200000,500000,1000000,5000000];const chipClasses=["r","g","s","500k","b","r","g","s","p"];
+  const chips=document.querySelector(".chips");chipValues.forEach((v,i)=>{if(!chips.querySelector('[data-value="'+v+'"]')){const b=document.createElement("button");b.className="chip "+chipClasses[i]; if(v===500000)b.classList.add("chip-white");b.dataset.value=v;b.innerHTML="<span class=\"chip-label\">"+v.toLocaleString("ko-KR")+"</span>";chips.appendChild(b)}});
+  // iPhone/iPad touch support: use pointer events with a click fallback.
+  function bindTap(el, fn){
+    if(!el) return;
+    let last=0;
+    const fire=e=>{ const now=Date.now(); if(e.type==='click' && now-last<500) return; last=now; fn(e); };
+    el.addEventListener('pointerup', fire, {passive:true});
+    el.addEventListener('click', fire, {passive:true});
+  }
+  qa(".chip").forEach(x=>bindTap(x,()=>choose(+x.dataset.value)));
+  bindTap(document.getElementById("clear"),clearB);bindTap(document.getElementById("deal"),deal);bindTap(document.getElementById("new"),reset);
+  // The five side bets are part of the fixed HTML layout so they never disappear during rendering.
+  qa(".sidebet").forEach(x=>bindTap(x,()=>placeBet(x.dataset.bet)));
+  qa(".zone.player").forEach(x=>bindTap(x,()=>placeBet("PLAYER")));
+  qa(".zone.tie").forEach(x=>bindTap(x,()=>placeBet("TIE")));
+  qa(".zone.banker").forEach(x=>bindTap(x,()=>placeBet("BANKER")));
+
+  // Fix repeated sound only on deal; no external audio files are required.
+  shuffle();drawRoad();update();choose(1000);
+})();
+</script>
+
+
+
+</body>
+</html>
+/* ===== CHIP PATTERN CORRECTION: 5 OUTER EDGE MARKS ONLY ===== */
+.chip{
+  background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.07) 0 34%,transparent 35%),
+    radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(255,255,255,.18) 59% 61%,transparent 62%),
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.16),transparent 28%) !important;
+}
+/* Five short rectangular marks around the OUTER rim. They do not extend toward the center. */
+.chip:before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:conic-gradient(from 0deg,
+    #e9e7df 0deg 24deg,transparent 24deg 72deg,
+    #e9e7df 72deg 96deg,transparent 96deg 144deg,
+    #e9e7df 144deg 168deg,transparent 168deg 216deg,
+    #e9e7df 216deg 240deg,transparent 240deg 288deg,
+    #e9e7df 288deg 312deg,transparent 312deg 360deg) !important;
+  -webkit-mask:radial-gradient(circle,#000 0 0,transparent 0) !important;
+  mask:radial-gradient(circle,#000 0 0,transparent 0) !important;
+  /* outer-ring mask: transparent center, visible only at the rim */
+  -webkit-mask:radial-gradient(circle at center,transparent 0 42%,#000 43% 100%) !important;
+  mask:radial-gradient(circle at center,transparent 0 42%,#000 43% 100%) !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+}
+/* Rebuild the inner circular rings separately so the edge marks never run into the center. */
+.chip:after{
+  content:"" !important;
+  position:absolute !important;
+  inset:8px !important;
+  border-radius:50% !important;
+  border:2px solid rgba(240,240,235,.7) !important;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.22),inset 0 0 0 6px rgba(255,255,255,.07) !important;
+  pointer-events:none !important;
+  z-index:2 !important;
+}
+.chip-white,.chip[data-value="500000"]{
+  background-image:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 34%,transparent 35%),
+    radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(55,83,135,.22) 59% 61%,transparent 62%) !important;
+}
+.chip-white:before,.chip[data-value="500000"]:before{
+  background:conic-gradient(from 0deg,
+    #4969a2 0deg 24deg,transparent 24deg 72deg,
+    #4969a2 72deg 96deg,transparent 96deg 144deg,
+    #4969a2 144deg 168deg,transparent 168deg 216deg,
+    #4969a2 216deg 240deg,transparent 240deg 288deg,
+    #4969a2 288deg 312deg,transparent 312deg 360deg) !important;
+  border:0 !important;
+  -webkit-mask:radial-gradient(circle at center,transparent 0 42%,#000 43% 100%) !important;
+  mask:radial-gradient(circle at center,transparent 0 42%,#000 43% 100%) !important;
+}
